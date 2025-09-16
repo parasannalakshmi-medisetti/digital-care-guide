@@ -45,15 +45,7 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Desktop Login Buttons */}
-          <div className="hidden md:flex space-x-3">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/login/patient">Patient Login</Link>
-            </Button>
-            <Button variant="patient" size="sm" asChild>
-              <Link to="/login/doctor">Doctor Login</Link>
-            </Button>
-          </div>
+          {/* Desktop Login Buttons - Removed as per user request */}
 
           {/* Mobile menu button */}
           <button
@@ -84,14 +76,7 @@ const Header = () => {
                   {item.name}
                 </Link>
               ))}
-              <div className="flex flex-col space-y-2 pt-3 border-t">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/login/patient">Patient Login</Link>
-                </Button>
-                <Button variant="patient" size="sm" asChild>
-                  <Link to="/login/doctor">Doctor Login</Link>
-                </Button>
-              </div>
+              {/* Mobile Login Buttons - Removed as per user request */}
             </nav>
           </div>
         )}

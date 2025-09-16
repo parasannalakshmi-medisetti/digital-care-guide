@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Stethoscope, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 const DoctorLogin = () => {
@@ -14,11 +14,14 @@ const DoctorLogin = () => {
     rememberMe: false
   });
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // This will be connected to Supabase authentication later
     console.log("Doctor login:", formData);
+    // Navigate to doctor dashboard after successful login
+    navigate("/dashboard/doctor");
   };
 
   return (
