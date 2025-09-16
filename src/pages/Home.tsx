@@ -117,10 +117,10 @@ const Home = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button variant="hero" size="lg" asChild>
-                <Link to="/register/patient">Get Started as Patient</Link>
+                <Link to="/login/patient">Get Started as Patient</Link>
               </Button>
               <Button variant="secondary" size="lg" asChild>
-                <Link to="/register/doctor">Join as Doctor</Link>
+                <Link to="/login/doctor">Join as Doctor</Link>
               </Button>
             </div>
           </div>
@@ -198,25 +198,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-primary text-white">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to Transform Your Healthcare Experience?
-          </h2>
-          <p className="text-xl mb-8">
-            Join thousands of patients and doctors who trust TeleMed for their healthcare needs.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="secondary" size="lg" asChild>
-              <Link to="/register/patient">Register as Patient</Link>
-            </Button>
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary" asChild>
-              <Link to="/register/doctor">Register as Doctor</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };
