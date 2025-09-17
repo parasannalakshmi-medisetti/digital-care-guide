@@ -52,7 +52,7 @@ const PatientRegister = () => {
         .from('patients')
         .select('email, phone')
         .or(`email.eq.${formData.email},phone.eq.${formData.phone}`)
-        .single();
+        .maybeSingle();
 
       if (existingPatient) {
         const isDuplicateEmail = existingPatient.email === formData.email;
