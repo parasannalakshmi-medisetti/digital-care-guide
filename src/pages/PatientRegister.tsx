@@ -23,6 +23,8 @@ const PatientRegister = () => {
     age: "",
     gender: "",
     address: "",
+    emergencyContact: "",
+    medicalHistory: "",
     acceptTerms: false,
     acceptPrivacy: false
   });
@@ -83,7 +85,7 @@ const PatientRegister = () => {
         return;
       }
 
-      // Insert into patients table (Supabase handles password hashing)
+      // Insert into patients table with all form details
       if (data.user) {
         const { error: insertError } = await supabase
           .from('patients')
@@ -93,7 +95,9 @@ const PatientRegister = () => {
             phone: formData.phone,
             email: formData.email,
             date_of_birth: formData.age ? new Date(new Date().getFullYear() - parseInt(formData.age), 0, 1).toISOString().split('T')[0] : null,
-            gender: formData.gender || null
+            gender: formData.gender || null,
+            emergency_contact: formData.emergencyContact || null,
+            medical_history: formData.medicalHistory || null
           });
 
         if (insertError) {
@@ -212,6 +216,27 @@ const PatientRegister = () => {
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     placeholder="123 Main St, City, State, ZIP"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyContact">Emergency Contact</Label>
+                  <Input
+                    id="emergencyContact"
+                    value={formData.emergencyContact}
+                    onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
+                    placeholder="Emergency contact name and phone"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="medicalHistory">Medical History</Label>
+                  <Textarea
+                    id="medicalHistory"
+                    value={formData.medicalHistory}
+                    onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
+                    placeholder="Brief medical history, allergies, current medications..."
+                    rows={3}
                   />
                 </div>
               </div>
