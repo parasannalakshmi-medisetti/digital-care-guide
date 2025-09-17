@@ -113,10 +113,10 @@ const PatientRegister = () => {
       }
 
       toast({
-        title: "Registration Successful",
-        description: "Your patient account has been created successfully. Welcome!",
+        title: "Registration Successful", 
+        description: "Account created! Please sign in to access your dashboard.",
       });
-      navigate('/dashboard/patient');
+      navigate('/login/patient');
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({

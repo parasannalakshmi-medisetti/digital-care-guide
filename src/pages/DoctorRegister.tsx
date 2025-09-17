@@ -116,9 +116,9 @@ const DoctorRegister = () => {
 
       toast({
         title: "Registration Successful",
-        description: "Your doctor account has been created successfully. Welcome!",
+        description: "Account created! Please sign in to access your dashboard.", 
       });
-      navigate('/dashboard/doctor');
+      navigate('/login/doctor');
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({

@@ -212,7 +212,7 @@ const PatientDashboard = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Hello, {patientProfile?.full_name || 'Patient'}
+                Hello, {patientProfile?.full_name || user?.user_metadata?.full_name || 'Patient'}
               </h1>
               <p className="text-muted-foreground">
                 Welcome to your patient dashboard. Manage your health and connect with doctors.

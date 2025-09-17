@@ -316,7 +316,7 @@ const DoctorDashboard = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Hello, {doctorProfile?.full_name || 'Doctor'}
+                Hello, {doctorProfile?.full_name || user?.user_metadata?.full_name || 'Doctor'}
               </h1>
               <p className="text-muted-foreground">
                 {doctorProfile?.specialization} • Manage your practice and connect with patients.
