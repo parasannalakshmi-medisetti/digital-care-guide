@@ -63,6 +63,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "consultation_requests_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "consultation_requests_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -214,6 +221,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "prescriptions_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "prescriptions_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -317,7 +331,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      doctors_public: {
+        Row: {
+          available: boolean | null
+          bio: string | null
+          created_at: string | null
+          experience_years: number | null
+          full_name: string | null
+          id: string | null
+          specialization: string | null
+        }
+        Insert: {
+          available?: boolean | null
+          bio?: string | null
+          created_at?: string | null
+          experience_years?: number | null
+          full_name?: string | null
+          id?: string | null
+          specialization?: string | null
+        }
+        Update: {
+          available?: boolean | null
+          bio?: string | null
+          created_at?: string | null
+          experience_years?: number | null
+          full_name?: string | null
+          id?: string | null
+          specialization?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
