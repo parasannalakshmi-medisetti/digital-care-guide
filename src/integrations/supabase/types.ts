@@ -84,7 +84,7 @@ export type Database = {
           phone: string | null
           specialization: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           available?: boolean | null
@@ -98,7 +98,7 @@ export type Database = {
           phone?: string | null
           specialization: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           available?: boolean | null
@@ -112,7 +112,7 @@ export type Database = {
           phone?: string | null
           specialization?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -129,7 +129,7 @@ export type Database = {
           medical_history: string | null
           phone: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -143,7 +143,7 @@ export type Database = {
           medical_history?: string | null
           phone?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -157,7 +157,7 @@ export type Database = {
           medical_history?: string | null
           phone?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -231,7 +231,7 @@ export type Database = {
           id: string
           phone: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -241,7 +241,7 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -251,13 +251,13 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
       users: {
         Row: {
-          auth_user_id: string
+          auth_user_id: string | null
           available: boolean | null
           bio: string | null
           created_at: string
@@ -276,7 +276,7 @@ export type Database = {
           user_type: string
         }
         Insert: {
-          auth_user_id: string
+          auth_user_id?: string | null
           available?: boolean | null
           bio?: string | null
           created_at?: string
@@ -295,7 +295,7 @@ export type Database = {
           user_type: string
         }
         Update: {
-          auth_user_id?: string
+          auth_user_id?: string | null
           available?: boolean | null
           bio?: string | null
           created_at?: string
