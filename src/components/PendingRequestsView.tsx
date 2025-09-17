@@ -1,38 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { 
-  Stethoscope, 
-  Users, 
-  Calendar, 
-  Video,
-  CheckCircle,
-  XCircle,
-  Clock,
-  FileText,
-  Settings,
-  User,
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  FileText, 
+  User, 
   Phone,
-  LogOut,
-  Send
+  Video,
+  MessageCircle,
+  ArrowLeft,
+  Filter
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import PendingRequestsView from "@/components/PendingRequestsView";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 
-interface DoctorProfile {
-  id: string;
-  full_name: string;
-  specialization: string;
-}
-
-interface ConsultationRequest {
+interface PendingRequest {
   id: string;
   patient_id: string;
   symptoms: string;
@@ -43,17 +33,24 @@ interface ConsultationRequest {
   patient: {
     full_name: string;
     emergency_contact: string;
+    email: string;
+    phone: string;
   };
 }
 
-const DoctorDashboard = () => {
-  const { user, signOut } = useAuth();
-  const [doctorProfile, setDoctorProfile] = useState<DoctorProfile | null>(null);
-  const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<ConsultationRequest | null>(null);
-  const [showPrescriptionDialog, setShowPrescriptionDialog] = useState(false);
+interface PendingRequestsViewProps {
+  onClose: () => void;
+  doctorId: string;
+}
+
+const PendingRequestsView = ({ onClose, doctorId }: PendingRequestsViewProps) => {
+  const [requests, setRequests] = useState<PendingRequest[]>([]);
+  const [filteredRequests, setFilteredRequests] = useState<PendingRequest[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<PendingRequest | null>(null);
   const [showResponseDialog, setShowResponseDialog] = useState(false);
-  const [showPendingRequests, setShowPendingRequests] = useState(false);
+  const [showPrescriptionDialog, setShowPrescriptionDialog] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [responseMessage, setResponseMessage] = useState('');
   const [prescriptionData, setPrescriptionData] = useState({
     medications: '',
     dosageInstructions: '',
@@ -61,73 +58,61 @@ const DoctorDashboard = () => {
     followUpDate: '',
     notes: ''
   });
-  const [responseMessage, setResponseMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      fetchDoctorProfile();
-      fetchConsultationRequests();
-    }
-  }, [user]);
+    fetchRequests();
+  }, [doctorId]);
 
-  const fetchDoctorProfile = async () => {
+  useEffect(() => {
+    filterRequests();
+  }, [requests, statusFilter]);
+
+  const fetchRequests = async () => {
     try {
-      const { data, error } = await supabase
-        .from('doctors')
-        .select('id, full_name, specialization')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching doctor profile:', error);
-      } else {
-        setDoctorProfile(data);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  const fetchConsultationRequests = async () => {
-    try {
-      const { data: doctorData, error: doctorError } = await supabase
-        .from('doctors')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (doctorError) return;
-
       const { data, error } = await supabase
         .from('consultation_requests')
         .select(`
           *,
-          patient:patients(full_name, emergency_contact)
+          patient:patients(full_name, emergency_contact, email, phone)
         `)
-        .eq('doctor_id', doctorData.id)
+        .eq('doctor_id', doctorId)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching consultation requests:', error);
+        console.error('Error fetching requests:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load consultation requests.",
+          variant: "destructive",
+        });
       } else {
-        setConsultationRequests(data || []);
+        setRequests(data || []);
       }
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
-  const handleAcceptRequest = async (request: ConsultationRequest) => {
+  const filterRequests = () => {
+    if (statusFilter === 'all') {
+      setFilteredRequests(requests);
+    } else {
+      setFilteredRequests(requests.filter(req => req.status === statusFilter));
+    }
+  };
+
+  const handleAcceptRequest = async (request: PendingRequest) => {
     setSelectedRequest(request);
     const consultationType = request.consultation_type === 'video' ? 'video call' : 'chat';
     setResponseMessage(`Your consultation request has been accepted! I'm ready to provide a ${consultationType} consultation. Please be available at your preferred time. For video calls, ensure you have a stable internet connection and a working camera/microphone.`);
     setShowResponseDialog(true);
   };
 
-  const handleDeclineRequest = async (request: ConsultationRequest) => {
+  const handleDeclineRequest = async (request: PendingRequest) => {
     setSelectedRequest(request);
-    setResponseMessage('Thank you for your consultation request. Unfortunately, I am not available at your preferred time. Please consider rescheduling.');
+    setResponseMessage('Thank you for your consultation request. Unfortunately, I am not available at your preferred time. Please consider rescheduling or consulting another doctor.');
     setShowResponseDialog(true);
   };
 
@@ -156,7 +141,7 @@ const DoctorDashboard = () => {
       setShowResponseDialog(false);
       setSelectedRequest(null);
       setResponseMessage('');
-      fetchConsultationRequests();
+      fetchRequests();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -169,7 +154,7 @@ const DoctorDashboard = () => {
   };
 
   const handleCreatePrescription = async () => {
-    if (!selectedRequest || !doctorProfile) return;
+    if (!selectedRequest) return;
 
     setLoading(true);
     try {
@@ -178,7 +163,7 @@ const DoctorDashboard = () => {
         .insert({
           consultation_request_id: selectedRequest.id,
           patient_id: selectedRequest.patient_id,
-          doctor_id: doctorProfile.id,
+          doctor_id: doctorId,
           medications: prescriptionData.medications,
           dosage_instructions: prescriptionData.dosageInstructions,
           health_tips: prescriptionData.healthTips,
@@ -210,7 +195,7 @@ const DoctorDashboard = () => {
         followUpDate: '',
         notes: ''
       });
-      fetchConsultationRequests();
+      fetchRequests();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -222,75 +207,8 @@ const DoctorDashboard = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    toast({
-      title: "Signed Out",
-      description: "You have been signed out successfully.",
-    });
-  };
-
-  const dashboardStats = [
-    {
-      title: "Pending Requests",
-      value: consultationRequests.filter(r => r.status === 'pending').length.toString(),
-      icon: Clock,
-      color: "text-yellow-600"
-    },
-    {
-      title: "Accepted Today",
-      value: consultationRequests.filter(r => r.status === 'accepted' && 
-        new Date(r.created_at).toDateString() === new Date().toDateString()).length.toString(),
-      icon: Video,
-      color: "text-blue-600"
-    },
-    {
-      title: "Total Requests",
-      value: consultationRequests.length.toString(),
-      icon: Users,
-      color: "text-green-600"
-    },
-    {
-      title: "Completed",
-      value: consultationRequests.filter(r => r.status === 'completed').length.toString(),
-      icon: CheckCircle,
-      color: "text-purple-600"
-    }
-  ];
-
-  const quickActions = [
-    {
-      icon: Users,
-      title: "View Pending Requests",
-      description: "Review and respond to patient requests",
-      variant: "default" as const,
-      action: () => setShowPendingRequests(true)
-    },
-    {
-      icon: Calendar,
-      title: "Manage Schedule",
-      description: "Set availability and time slots",
-      variant: "secondary" as const,
-      action: () => {}
-    },
-    {
-      icon: Video,
-      title: "Start Video Call",
-      description: "Begin consultation with patient",
-      variant: "outline" as const,
-      action: () => {}
-    },
-    {
-      icon: Settings,
-      title: "Consultation Settings",
-      description: "Configure your practice preferences",
-      variant: "outline" as const,
-      action: () => {}
-    }
-  ];
-
   const getUrgencyVariant = (symptoms: string) => {
-    const urgentKeywords = ['chest pain', 'breathing', 'emergency', 'severe', 'urgent'];
+    const urgentKeywords = ['chest pain', 'breathing', 'emergency', 'severe', 'urgent', 'blood', 'unconscious'];
     const isUrgent = urgentKeywords.some(keyword => 
       symptoms.toLowerCase().includes(keyword)
     );
@@ -307,105 +225,83 @@ const DoctorDashboard = () => {
     }
   };
 
-  if (showPendingRequests && doctorProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <PendingRequestsView 
-            onClose={() => setShowPendingRequests(false)}
-            doctorId={doctorProfile.id}
-          />
-        </div>
-      </div>
-    );
-  }
+  const pendingCount = requests.filter(r => r.status === 'pending').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Welcome Header */}
-        <div className="flex items-center justify-between mb-8">
+    <>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-secondary p-2 rounded-full">
-              <Stethoscope className="h-6 w-6 text-white" />
-            </div>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                Hello, {doctorProfile?.full_name || user?.user_metadata?.full_name || 'Doctor'}
-              </h1>
+              <h2 className="text-2xl font-bold">Consultation Requests</h2>
               <p className="text-muted-foreground">
-                {doctorProfile?.specialization} • Manage your practice and connect with patients.
+                {pendingCount} pending request{pendingCount !== 1 ? 's' : ''} awaiting your response
               </p>
             </div>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+          
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-1 border rounded-md text-sm bg-background"
+            >
+              <option value="all">All Requests</option>
+              <option value="pending">Pending Only</option>
+              <option value="accepted">Accepted</option>
+              <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {dashboardStats.map((stat, index) => (
-            <Card key={index} className="shadow-medium">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                  </div>
-                  <stat.icon className={`h-8 w-8 ${stat.color}`} />
-                </div>
+        {/* Requests List */}
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+          {filteredRequests.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No requests found</h3>
+                <p className="text-muted-foreground">
+                  {statusFilter === 'all' 
+                    ? "You haven't received any consultation requests yet."
+                    : `No ${statusFilter} requests at the moment.`
+                  }
+                </p>
               </CardContent>
             </Card>
-          ))}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {quickActions.map((action, index) => (
-            <Card key={index} className="shadow-medium hover:shadow-strong transition-all duration-300 cursor-pointer">
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto bg-gradient-primary p-3 rounded-full w-fit mb-3">
-                  <action.icon className="h-5 w-5 text-white" />
-                </div>
-                <CardTitle className="text-sm">{action.title}</CardTitle>
-                <CardDescription className="text-xs">
-                  {action.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Button variant={action.variant} size="sm" className="w-full" onClick={action.action}>
-                  {action.title}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Consultation Requests */}
-        <Card className="shadow-medium">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              Consultation Requests
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {consultationRequests.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No consultation requests yet</p>
-              </div>
-            ) : (
-              consultationRequests.map((request) => (
-                <div key={request.id} className="p-4 bg-muted/50 rounded-lg border">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-medium">{request.patient.full_name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Emergency Contact: {request.patient.emergency_contact}
-                      </p>
+          ) : (
+            filteredRequests.map((request) => (
+              <Card key={request.id} className="shadow-medium">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-gradient-primary p-2 rounded-full">
+                        <User className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{request.patient.full_name}</CardTitle>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {request.patient.emergency_contact}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            {request.consultation_type === 'video' ? 
+                              <Video className="h-3 w-3" /> : 
+                              <MessageCircle className="h-3 w-3" />
+                            }
+                            {request.consultation_type}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Badge variant={getUrgencyVariant(request.symptoms)}>
@@ -416,15 +312,23 @@ const DoctorDashboard = () => {
                       </Badge>
                     </div>
                   </div>
-                  <div className="space-y-2 mb-3">
-                    <p className="text-sm"><strong>Symptoms:</strong> {request.symptoms}</p>
-                    <p className="text-sm"><strong>Type:</strong> {request.consultation_type}</p>
-                    {request.request_message && (
-                      <p className="text-sm"><strong>Message:</strong> {request.request_message}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Requested: {new Date(request.created_at).toLocaleString()}
-                    </p>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <h4 className="font-medium text-sm mb-2">Patient Symptoms:</h4>
+                    <p className="text-sm">{request.symptoms}</p>
+                  </div>
+                  
+                  {request.request_message && (
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <h4 className="font-medium text-sm mb-2">Additional Message:</h4>
+                      <p className="text-sm">{request.request_message}</p>
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-muted-foreground">
+                    Requested: {new Date(request.created_at).toLocaleString()}
                   </div>
                   
                   <div className="flex gap-2">
@@ -466,27 +370,11 @@ const DoctorDashboard = () => {
                       </Button>
                     )}
                   </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Professional Notice */}
-        <Card className="mt-8 border-primary/20 bg-primary/5">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Stethoscope className="h-5 w-5 text-primary" />
-              <div>
-                <h4 className="font-medium text-primary">Professional Practice</h4>
-                <p className="text-sm text-muted-foreground">
-                  All consultations are recorded for quality assurance and legal compliance. 
-                  Patient data is protected under HIPAA regulations.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Response Dialog */}
@@ -603,8 +491,8 @@ const DoctorDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 
-export default DoctorDashboard;
+export default PendingRequestsView;
