@@ -137,6 +137,13 @@ const PatientDashboard = () => {
       variant: "default" as const
     },
     {
+      icon: AlertCircle,
+      title: "SOS Emergency Call",
+      description: "Connect to your emergency contact",
+      action: handleEmergencyCall,
+      variant: "destructive" as const
+    },
+    {
       icon: FileText,
       title: "View Prescriptions",
       description: "Access your digital prescriptions and health tips",
@@ -149,13 +156,6 @@ const PatientDashboard = () => {
       description: "Read personalized health advice",
       action: () => {},
       variant: "outline" as const
-    },
-    {
-      icon: AlertCircle,
-      title: "SOS Emergency Call",
-      description: "Connect to your emergency contact",
-      action: handleEmergencyCall,
-      variant: "destructive" as const
     }
   ];
 
@@ -219,7 +219,7 @@ const PatientDashboard = () => {
         </div>
 
         {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-4xl mx-auto">
           {quickActions.map((action, index) => (
             <Card key={index} className="shadow-medium hover:shadow-strong transition-all duration-300 cursor-pointer">
               <CardHeader className="text-center">
