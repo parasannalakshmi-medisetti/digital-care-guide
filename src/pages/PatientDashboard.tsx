@@ -229,7 +229,7 @@ const PatientDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {quickActions.map((action, index) => (
             <Card key={index} className="shadow-medium hover:shadow-strong transition-all duration-300 cursor-pointer">
-              <CardHeader className="text-center pb-4">
+              <CardHeader className="text-center">
                 <div className="mx-auto bg-gradient-secondary p-3 rounded-full w-fit mb-3">
                   <action.icon className="h-6 w-6 text-white" />
                 </div>
