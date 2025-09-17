@@ -73,10 +73,9 @@ const DoctorRegister = () => {
       }
 
       // Create auth user
-      const redirectUrl = `${window.location.origin}/login/doctor`;
       const { data, error } = await signUp(normalizedEmail, formData.password, {
         full_name: `${formData.firstName} ${formData.lastName}`
-      }, redirectUrl);
+      });
 
       if (error) {
         toast({
@@ -117,9 +116,9 @@ const DoctorRegister = () => {
 
       toast({
         title: "Registration Successful",
-        description: "Your application has been submitted for review. Please check your email to verify your account.",
+        description: "Your doctor account has been created successfully. Welcome!",
       });
-      navigate('/login/doctor');
+      navigate('/dashboard/doctor');
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({

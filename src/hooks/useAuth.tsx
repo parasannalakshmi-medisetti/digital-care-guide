@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   signUp: (email: string, password: string, userData: any, redirectUrl?: string) => Promise<{ data: any; error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -47,18 +47,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, userData: any, customRedirectUrl?: string) => {
-    const defaultRedirectUrl = `${window.location.origin}/`;
-    const finalRedirectUrl = customRedirectUrl || defaultRedirectUrl;
-    
     try {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
         options: {
-          emailRedirectTo: finalRedirectUrl,
           data: userData
         }
       });
+      
+      // If user exists but not confirmed, try to sign them in directly
+      if (error?.message?.includes('already registered')) {
+        const signInResult = await signIn(email, password);
+        return { data: signInResult.data || null, error: signInResult.error };
+      }
+      
       return { data, error };
     } catch (err: any) {
       console.error('SignUp error:', err);
@@ -68,14 +71,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
       });
-      return { error };
+      return { data, error };
     } catch (err: any) {
       console.error('SignIn error:', err);
-      return { error: err };
+      return { data: null, error: err };
     }
   };
 

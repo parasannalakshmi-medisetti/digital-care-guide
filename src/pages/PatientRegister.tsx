@@ -71,10 +71,9 @@ const PatientRegister = () => {
       }
 
       // Create auth user
-      const redirectUrl = `${window.location.origin}/login/patient`;
       const { data, error } = await signUp(normalizedEmail, formData.password, {
         full_name: `${formData.firstName} ${formData.lastName}`
-      }, redirectUrl);
+      });
 
       if (error) {
         toast({
@@ -115,9 +114,9 @@ const PatientRegister = () => {
 
       toast({
         title: "Registration Successful",
-        description: "Your account has been created successfully. Please check your email to verify your account.",
+        description: "Your patient account has been created successfully. Welcome!",
       });
-      navigate('/login/patient');
+      navigate('/dashboard/patient');
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({
