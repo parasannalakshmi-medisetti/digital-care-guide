@@ -156,13 +156,6 @@ const PatientDashboard = () => {
       description: "Connect to your emergency contact",
       action: handleEmergencyCall,
       variant: "destructive" as const
-    },
-    {
-      icon: Send,
-      title: "Send Consultation Request",
-      description: "Request appointment with specialist",
-      action: () => setShowDoctorList(true),
-      variant: "default" as const
     }
   ];
 
