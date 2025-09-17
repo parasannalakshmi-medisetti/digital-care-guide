@@ -28,11 +28,25 @@ const PatientLogin = () => {
       const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
-        toast({
-          title: "Login Failed",
-          description: error.message || "Invalid email or password",
-          variant: "destructive",
-        });
+        if (error.message === "Email not confirmed") {
+          toast({
+            title: "Email Not Confirmed",
+            description: "Please check your email and click the confirmation link before logging in.",
+            variant: "destructive",
+          });
+        } else if (error.message === "Invalid login credentials") {
+          toast({
+            title: "Invalid Credentials",
+            description: "Please check your email and password and try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login Failed",
+            description: error.message || "Invalid email or password",
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Login Successful",
