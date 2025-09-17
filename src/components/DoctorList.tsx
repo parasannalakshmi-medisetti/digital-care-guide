@@ -27,9 +27,14 @@ interface DoctorListProps {
   onBack?: () => void;
 }
 
+interface DoctorWithMatch extends Doctor {
+  matchScore: number;
+  matchReason: string[];
+}
+
 const DoctorList = ({ onClose, symptoms: userSymptoms = "", category = "", onBack }: DoctorListProps) => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
+  const [filteredDoctors, setFilteredDoctors] = useState<DoctorWithMatch[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [symptoms, setSymptoms] = useState(userSymptoms);
@@ -53,37 +58,93 @@ const DoctorList = ({ onClose, symptoms: userSymptoms = "", category = "", onBac
   }, [doctors, category]);
 
   const filterDoctorsByCategory = () => {
-    if (!category || category === "General Medicine") {
-      setFilteredDoctors(doctors);
-      return;
-    }
-
     const categorySpecializations: { [key: string]: string[] } = {
-      "Cardiology": ["Cardiology", "Cardiovascular Surgery", "Heart"],
-      "Orthopedics": ["Orthopedics", "Sports Medicine", "Bone", "Joint"],
-      "Dermatology": ["Dermatology", "Skin"],
-      "Neurology": ["Neurology", "Neurosurgery", "Brain", "Nerve"],
-      "Gastroenterology": ["Gastroenterology", "Digestive", "Stomach"],
-      "Pediatrics": ["Pediatrics", "Child", "Children"],
-      "Psychiatry": ["Psychiatry", "Mental Health", "Psychology"],
-      "ENT": ["ENT", "Ear", "Nose", "Throat"],
-      "Ophthalmology": ["Ophthalmology", "Eye", "Vision"],
-      "Urology": ["Urology", "Kidney", "Bladder"]
+      "Cardiology": ["Cardiology", "Cardiovascular Surgery", "Heart", "Cardiac"],
+      "Orthopedics": ["Orthopedics", "Sports Medicine", "Bone", "Joint", "Spine", "Musculoskeletal"],
+      "Dermatology": ["Dermatology", "Skin", "Dermatologist"],
+      "Neurology": ["Neurology", "Neurosurgery", "Brain", "Nerve", "Neurological"],
+      "Gastroenterology": ["Gastroenterology", "Digestive", "Stomach", "GI", "Gastrointestinal"],
+      "Pediatrics": ["Pediatrics", "Child", "Children", "Pediatric"],
+      "Psychiatry": ["Psychiatry", "Mental Health", "Psychology", "Psychiatric"],
+      "ENT": ["ENT", "Ear", "Nose", "Throat", "Otolaryngology"],
+      "Ophthalmology": ["Ophthalmology", "Eye", "Vision", "Optometry"],
+      "Urology": ["Urology", "Kidney", "Bladder", "Urological"],
+      "Gynecology": ["Gynecology", "Obstetrics", "Women's Health", "OB/GYN"],
+      "General Medicine": ["General Medicine", "Internal Medicine", "Family Medicine", "Primary Care"]
     };
 
-    const targetSpecs = categorySpecializations[category] || [category];
-    
-    const filtered = doctors.filter(doctor => 
-      targetSpecs.some(spec => 
-        doctor.specialization.toLowerCase().includes(spec.toLowerCase())
-      )
-    );
+    const symptomKeywords = {
+      "Cardiology": ["chest pain", "heart", "cardiac", "palpitations", "shortness of breath", "chest tightness", "irregular heartbeat", "hypertension"],
+      "Orthopedics": ["bone", "joint", "muscle", "back pain", "knee pain", "fracture", "sprain", "arthritis", "shoulder pain", "hip pain"],
+      "Dermatology": ["skin", "rash", "acne", "eczema", "psoriasis", "mole", "dermatitis", "itching", "dry skin"],
+      "Neurology": ["migraine", "seizure", "neurological", "nerve", "brain", "memory", "coordination", "headache", "dizziness"],
+      "Gastroenterology": ["stomach", "digestive", "abdominal", "diarrhea", "constipation", "acid reflux", "heartburn", "bloating"],
+      "Pediatrics": ["child", "children", "baby", "infant", "toddler", "pediatric"],
+      "Psychiatry": ["anxiety", "depression", "stress", "mental health", "mood", "panic", "psychological"],
+      "ENT": ["ear", "nose", "throat", "hearing", "sinus", "tonsils", "voice", "swallowing"],
+      "Ophthalmology": ["eye", "vision", "sight", "glasses", "blurred vision", "eye pain"],
+      "Urology": ["kidney", "bladder", "urinary", "urine", "prostate", "urination"],
+      "Gynecology": ["women", "female", "period", "menstrual", "pregnancy", "gynecological"]
+    };
 
-    // If no doctors found for specific category, show all doctors but prioritize relevant ones
-    if (filtered.length === 0) {
-      setFilteredDoctors(doctors);
+    const lowerSymptoms = userSymptoms.toLowerCase();
+    
+    const doctorsWithMatch: DoctorWithMatch[] = doctors.map(doctor => {
+      let matchScore = 0;
+      const matchReasons: string[] = [];
+      
+      // Score based on specialization matching category
+      const targetSpecs = categorySpecializations[category] || [category];
+      const specializationMatch = targetSpecs.some(spec => 
+        doctor.specialization.toLowerCase().includes(spec.toLowerCase())
+      );
+      
+      if (specializationMatch) {
+        matchScore += 10;
+        matchReasons.push(`Specializes in ${doctor.specialization}`);
+      }
+      
+      // Score based on symptom keywords in bio or specialization
+      const relevantKeywords = symptomKeywords[category] || [];
+      relevantKeywords.forEach(keyword => {
+        if (lowerSymptoms.includes(keyword)) {
+          if (doctor.bio?.toLowerCase().includes(keyword) || 
+              doctor.specialization.toLowerCase().includes(keyword)) {
+            matchScore += 5;
+            matchReasons.push(`Expertise in ${keyword} related conditions`);
+          }
+        }
+      });
+      
+      // Extra score for experience
+      if (doctor.experience_years >= 10) {
+        matchScore += 2;
+        matchReasons.push(`${doctor.experience_years} years of experience`);
+      }
+      
+      return {
+        ...doctor,
+        matchScore,
+        matchReason: matchReasons
+      };
+    });
+
+    // Sort by match score (highest first) and filter based on relevance
+    const sortedDoctors = doctorsWithMatch
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .filter(doctor => doctor.matchScore > 0 || category === "General Medicine");
+
+    // If no specific matches found, show all doctors but prioritize by experience
+    if (sortedDoctors.length === 0) {
+      const fallbackDoctors = doctorsWithMatch
+        .sort((a, b) => b.experience_years - a.experience_years)
+        .map(doctor => ({
+          ...doctor,
+          matchReason: [`Available ${doctor.specialization} specialist`]
+        }));
+      setFilteredDoctors(fallbackDoctors);
     } else {
-      setFilteredDoctors(filtered);
+      setFilteredDoctors(sortedDoctors);
     }
   };
 
@@ -219,12 +280,24 @@ const DoctorList = ({ onClose, symptoms: userSymptoms = "", category = "", onBac
                       <Badge variant="secondary">{doctor.specialization}</Badge>
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>{doctor.experience_years} years experience</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{doctor.bio}</p>
+                   <CardContent className="space-y-3">
+                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                       <Clock className="h-4 w-4" />
+                       <span>{doctor.experience_years} years experience</span>
+                     </div>
+                     {doctor.matchReason.length > 0 && (
+                       <div className="space-y-1">
+                         <p className="text-xs font-medium text-primary">Match Reasons:</p>
+                         <div className="flex flex-wrap gap-1">
+                           {doctor.matchReason.slice(0, 2).map((reason, index) => (
+                             <Badge key={index} variant="outline" className="text-xs">
+                               {reason}
+                             </Badge>
+                           ))}
+                         </div>
+                       </div>
+                     )}
+                     <p className="text-sm text-muted-foreground line-clamp-2">{doctor.bio}</p>
                     <Button 
                       onClick={() => {
                         setSelectedDoctor(doctor);

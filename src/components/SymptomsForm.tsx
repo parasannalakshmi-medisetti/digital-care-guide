@@ -18,46 +18,83 @@ const SymptomsForm = ({ onSymptomsSubmit, onBack }: SymptomsFormProps) => {
   const symptomCategories = [
     {
       category: "General Medicine",
-      keywords: ["fever", "headache", "fatigue", "nausea", "vomiting", "dizziness", "weakness"],
-      specializations: ["General Medicine", "Internal Medicine"]
+      keywords: ["fever", "headache", "fatigue", "nausea", "vomiting", "dizziness", "weakness", "cold", "flu", "cough", "sore throat", "body ache"],
+      specializations: ["General Medicine", "Internal Medicine", "Family Medicine"]
     },
     {
       category: "Cardiology",
-      keywords: ["chest pain", "heart", "cardiac", "palpitations", "shortness of breath", "chest tightness"],
-      specializations: ["Cardiology", "Cardiovascular Surgery"]
+      keywords: ["chest pain", "heart", "cardiac", "palpitations", "shortness of breath", "chest tightness", "irregular heartbeat", "heart attack", "angina", "hypertension", "blood pressure"],
+      specializations: ["Cardiology", "Cardiovascular Surgery", "Heart"]
     },
     {
       category: "Orthopedics",
-      keywords: ["bone", "joint", "muscle", "back pain", "knee pain", "fracture", "sprain", "arthritis"],
-      specializations: ["Orthopedics", "Sports Medicine"]
+      keywords: ["bone", "joint", "muscle", "back pain", "knee pain", "fracture", "sprain", "arthritis", "shoulder pain", "hip pain", "ankle", "wrist", "spine", "neck pain"],
+      specializations: ["Orthopedics", "Sports Medicine", "Bone", "Joint", "Spine"]
     },
     {
       category: "Dermatology",
-      keywords: ["skin", "rash", "acne", "eczema", "psoriasis", "mole", "dermatitis"],
-      specializations: ["Dermatology"]
+      keywords: ["skin", "rash", "acne", "eczema", "psoriasis", "mole", "dermatitis", "itching", "dry skin", "spots", "blemishes", "allergic reaction", "hives"],
+      specializations: ["Dermatology", "Skin"]
     },
     {
       category: "Neurology",
-      keywords: ["migraine", "seizure", "neurological", "nerve", "brain", "memory", "coordination"],
-      specializations: ["Neurology", "Neurosurgery"]
+      keywords: ["migraine", "seizure", "neurological", "nerve", "brain", "memory", "coordination", "headache", "dizziness", "vertigo", "numbness", "tingling", "stroke"],
+      specializations: ["Neurology", "Neurosurgery", "Brain", "Nerve"]
     },
     {
       category: "Gastroenterology",
-      keywords: ["stomach", "digestive", "abdominal", "diarrhea", "constipation", "acid reflux"],
-      specializations: ["Gastroenterology"]
+      keywords: ["stomach", "digestive", "abdominal", "diarrhea", "constipation", "acid reflux", "heartburn", "bloating", "nausea", "stomach pain", "intestinal", "bowel"],
+      specializations: ["Gastroenterology", "Digestive", "Stomach"]
+    },
+    {
+      category: "Pediatrics",
+      keywords: ["child", "children", "baby", "infant", "toddler", "kid", "pediatric", "vaccination", "growth", "development"],
+      specializations: ["Pediatrics", "Child", "Children"]
+    },
+    {
+      category: "Psychiatry",
+      keywords: ["anxiety", "depression", "stress", "mental health", "mood", "panic", "psychological", "therapy", "counseling", "bipolar", "adhd"],
+      specializations: ["Psychiatry", "Mental Health", "Psychology"]
+    },
+    {
+      category: "ENT",
+      keywords: ["ear", "nose", "throat", "hearing", "sinus", "tonsils", "voice", "swallowing", "snoring", "ear infection", "nasal congestion"],
+      specializations: ["ENT", "Ear", "Nose", "Throat", "Otolaryngology"]
+    },
+    {
+      category: "Ophthalmology",
+      keywords: ["eye", "vision", "sight", "glasses", "contacts", "blurred vision", "eye pain", "red eyes", "cataracts", "glaucoma"],
+      specializations: ["Ophthalmology", "Eye", "Vision"]
+    },
+    {
+      category: "Urology",
+      keywords: ["kidney", "bladder", "urinary", "urine", "prostate", "urination", "uti", "kidney stones", "incontinence"],
+      specializations: ["Urology", "Kidney", "Bladder"]
+    },
+    {
+      category: "Gynecology",
+      keywords: ["women", "female", "period", "menstrual", "pregnancy", "gynecological", "reproductive", "ovarian", "cervical", "breast"],
+      specializations: ["Gynecology", "Obstetrics", "Women's Health"]
     }
   ];
 
   const detectCategory = (symptomsText: string) => {
     const lowerSymptoms = symptomsText.toLowerCase();
+    let bestMatch = { category: "General Medicine", score: 0 };
+    
     for (const cat of symptomCategories) {
+      let matchScore = 0;
       for (const keyword of cat.keywords) {
         if (lowerSymptoms.includes(keyword)) {
-          return cat.category;
+          matchScore += keyword.length; // Longer keywords get higher scores
         }
       }
+      if (matchScore > bestMatch.score) {
+        bestMatch = { category: cat.category, score: matchScore };
+      }
     }
-    return "General Medicine";
+    
+    return bestMatch.category;
   };
 
   const handleSubmit = () => {
