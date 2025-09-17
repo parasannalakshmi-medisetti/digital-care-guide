@@ -1,0 +1,3 @@
+-- Enable leaked password protection for better security
+-- This requires configuring password strength requirements
+-- Note: This is a project-level setting that may require manual configuration in Supabase dashboard

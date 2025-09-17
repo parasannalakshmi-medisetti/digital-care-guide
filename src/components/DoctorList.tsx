@@ -39,9 +39,10 @@ const DoctorList = ({ onClose }: DoctorListProps) => {
   }, []);
 
   const fetchDoctors = async () => {
+    // Only select essential columns, excluding sensitive data like email, phone, license_number
     const { data, error } = await supabase
       .from('doctors')
-      .select('*')
+      .select('id, full_name, specialization, bio, experience_years, available, created_at')
       .eq('available', true)
       .order('full_name');
 
