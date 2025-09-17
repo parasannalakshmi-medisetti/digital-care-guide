@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, userData: any, customRedirectUrl?: string) => {
     try {
+      // First try to sign up the user
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
@@ -57,16 +58,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
       
-      // If user exists but not confirmed, try to sign them in directly
-      if (error?.message?.includes('already registered')) {
+      // If user already exists, try to sign them in directly
+      if (error?.message?.includes('already registered') || error?.message?.includes('User already registered')) {
+        console.log('User exists, attempting sign in...');
         const signInResult = await signIn(email, password);
         return { data: signInResult.data || null, error: signInResult.error };
       }
       
-      // Auto-confirm user to bypass email verification
-      if (data?.user && !data.user.email_confirmed_at) {
-        // For development, we'll treat signup as successful without email verification
-        console.log('User registered successfully, bypassing email verification');
+      // If signup was successful but user needs confirmation, auto-sign them in
+      if (data?.user && error?.message?.includes('signup disabled')) {
+        console.log('Signup disabled, trying sign in...');
+        const signInResult = await signIn(email, password);
+        return { data: signInResult.data || null, error: signInResult.error };
+      }
+      
+      // For successful signup, immediately try to sign in to bypass email confirmation
+      if (data?.user && !error) {
+        console.log('User created, attempting immediate sign in...');
+        const signInResult = await signIn(email, password);
+        if (signInResult.data) {
+          return { data: signInResult.data, error: null };
+        }
       }
       
       return { data, error };
