@@ -48,10 +48,11 @@ const PatientRegister = () => {
 
     try {
       // Check for duplicate email or phone
+      const normalizedEmail = formData.email.trim().toLowerCase();
       const { data: existingPatient } = await supabase
         .from('patients')
         .select('email, phone')
-        .or(`email.eq.${formData.email},phone.eq.${formData.phone}`)
+        .or(`email.eq."${normalizedEmail}",phone.eq."${formData.phone}"`)
         .maybeSingle();
 
       if (existingPatient) {
@@ -71,7 +72,7 @@ const PatientRegister = () => {
 
       // Create auth user
       const redirectUrl = `${window.location.origin}/login/patient`;
-      const { data, error } = await signUp(formData.email, formData.password, {
+      const { data, error } = await signUp(normalizedEmail, formData.password, {
         full_name: `${formData.firstName} ${formData.lastName}`
       }, redirectUrl);
 
@@ -93,7 +94,7 @@ const PatientRegister = () => {
             user_id: data.user.id,
             full_name: `${formData.firstName} ${formData.lastName}`,
             phone: formData.phone,
-            email: formData.email,
+            email: normalizedEmail,
             date_of_birth: formData.age ? new Date(new Date().getFullYear() - parseInt(formData.age), 0, 1).toISOString().split('T')[0] : null,
             gender: formData.gender || null,
             emergency_contact: formData.emergencyContact || null,

@@ -50,23 +50,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const defaultRedirectUrl = `${window.location.origin}/`;
     const finalRedirectUrl = customRedirectUrl || defaultRedirectUrl;
     
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: finalRedirectUrl,
-        data: userData
-      }
-    });
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: {
+          emailRedirectTo: finalRedirectUrl,
+          data: userData
+        }
+      });
+      return { data, error };
+    } catch (err: any) {
+      console.error('SignUp error:', err);
+      return { data: null, error: err };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      return { error };
+    } catch (err: any) {
+      console.error('SignIn error:', err);
+      return { error: err };
+    }
   };
 
   const signOut = async () => {

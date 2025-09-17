@@ -50,11 +50,12 @@ const DoctorRegister = () => {
 
     try {
       // Check for duplicate email, phone, or license number
+      const normalizedEmail = formData.email.trim().toLowerCase();
       const { data: existingDoctor } = await supabase
         .from('doctors')
         .select('email, phone, license_number')
-        .or(`email.eq.${formData.email},phone.eq.${formData.phone},license_number.eq.${formData.licenseNumber}`)
-        .single();
+        .or(`email.eq."${normalizedEmail}",phone.eq."${formData.phone}",license_number.eq."${formData.licenseNumber}"`)
+        .maybeSingle();
 
       if (existingDoctor) {
         let errorMessage = "An account already exists with this ";
@@ -73,7 +74,7 @@ const DoctorRegister = () => {
 
       // Create auth user
       const redirectUrl = `${window.location.origin}/login/doctor`;
-      const { data, error } = await signUp(formData.email, formData.password, {
+      const { data, error } = await signUp(normalizedEmail, formData.password, {
         full_name: `${formData.firstName} ${formData.lastName}`
       }, redirectUrl);
 
@@ -95,7 +96,7 @@ const DoctorRegister = () => {
             user_id: data.user.id,
             full_name: `${formData.firstName} ${formData.lastName}`,
             phone: formData.phone,
-            email: formData.email,
+            email: normalizedEmail,
             specialization: formData.specialty,
             license_number: formData.licenseNumber,
             experience_years: parseInt(formData.experience.split('-')[0]) || 0,
