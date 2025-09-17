@@ -25,16 +25,10 @@ const DoctorLogin = () => {
     setLoading(true);
 
     try {
-      const { error } = await signIn(formData.email, formData.password);
+      const { data, error } = await signIn(formData.email, formData.password);
       
       if (error) {
-        if (error.message === "Email not confirmed") {
-          toast({
-            title: "Please Confirm Your Email",
-            description: "We've sent a confirmation link to your email. Please click it to activate your account, then try logging in again.",
-            variant: "destructive",
-          });
-        } else if (error.message === "Invalid login credentials") {
+        if (error.message?.includes("Invalid login credentials")) {
           toast({
             title: "Invalid Credentials",
             description: "Please check your email and password and try again.",
@@ -47,7 +41,7 @@ const DoctorLogin = () => {
             variant: "destructive",
           });
         }
-      } else {
+      } else if (data?.user) {
         toast({
           title: "Login Successful",
           description: "Welcome back! Redirecting to your dashboard...",
