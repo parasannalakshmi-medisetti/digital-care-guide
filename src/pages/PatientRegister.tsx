@@ -25,7 +25,6 @@ const PatientRegister = () => {
     emergencyContact: "",
     emergencyPhone: "",
     medicalHistory: "",
-    currentSymptoms: "",
     acceptTerms: false,
     acceptPrivacy: false
   });
@@ -48,10 +47,12 @@ const PatientRegister = () => {
     setLoading(true);
 
     try {
+      const redirectUrl = `${window.location.origin}/login/patient`;
+      
       const { error } = await signUp(formData.email, formData.password, {
         full_name: `${formData.firstName} ${formData.lastName}`,
         user_type: 'patient'
-      });
+      }, redirectUrl);
 
       if (error) {
         toast({
@@ -75,8 +76,7 @@ const PatientRegister = () => {
             date_of_birth: formData.dateOfBirth,
             gender: formData.gender,
             emergency_contact: formData.emergencyPhone,
-            medical_history: formData.medicalHistory,
-            current_symptoms: formData.currentSymptoms
+            medical_history: formData.medicalHistory
           });
 
         if (profileError) {
@@ -245,17 +245,6 @@ const PatientRegister = () => {
                     onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
                     placeholder="Any existing medical conditions, allergies, or ongoing treatments..."
                     rows={3}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="currentSymptoms">Current Symptoms/Concerns</Label>
-                  <Textarea
-                    id="currentSymptoms"
-                    value={formData.currentSymptoms}
-                    onChange={(e) => setFormData({ ...formData, currentSymptoms: e.target.value })}
-                    placeholder="Any current health concerns or symptoms..."
-                    rows={2}
                   />
                 </div>
               </div>

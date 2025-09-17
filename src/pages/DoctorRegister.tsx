@@ -6,8 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Stethoscope, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const DoctorRegister = () => {
   const [formData, setFormData] = useState({
@@ -27,10 +30,76 @@ const DoctorRegister = () => {
     verifyLicense: false
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { signUp } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This will be connected to Supabase authentication later
-    console.log("Doctor registration:", formData);
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/login/doctor`;
+      
+      const { error } = await signUp(formData.email, formData.password, {
+        full_name: `${formData.firstName} ${formData.lastName}`,
+        user_type: 'doctor'
+      }, redirectUrl);
+
+      if (error) {
+        toast({
+          title: "Registration Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create doctor profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('doctors')
+          .insert({
+            user_id: user.id,
+            full_name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            phone: formData.phone,
+            license_number: formData.licenseNumber,
+            specialization: formData.specialty,
+            experience_years: parseInt(formData.experience.split('-')[0]) || 0,
+            bio: formData.bio
+          });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
+      }
+
+      toast({
+        title: "Registration Successful",
+        description: "Your application has been submitted for review. Please check your email to verify your account.",
+      });
+      navigate('/login/doctor');
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const specialties = [
@@ -273,10 +342,9 @@ const DoctorRegister = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                variant="doctor"
-                disabled={!formData.acceptTerms || !formData.acceptPrivacy || !formData.verifyLicense}
+                disabled={!formData.acceptTerms || !formData.acceptPrivacy || !formData.verifyLicense || loading}
               >
-                Submit Application for Review
+                {loading ? 'Submitting Application...' : 'Submit Application for Review'}
               </Button>
             </form>
 
