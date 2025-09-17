@@ -23,6 +23,7 @@ import { toast } from "@/hooks/use-toast";
 import DoctorList from "@/components/DoctorList";
 import PrescriptionList from "@/components/PrescriptionList";
 import SymptomsForm from "@/components/SymptomsForm";
+import PatientBookingView from "@/components/PatientBookingView";
 
 interface PatientProfile {
   full_name: string;
@@ -51,6 +52,7 @@ const PatientDashboard = () => {
   const [userSymptoms, setUserSymptoms] = useState("");
   const [symptomCategory, setSymptomCategory] = useState("");
   const [activeView, setActiveView] = useState('dashboard');
+  const [showBookingView, setShowBookingView] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -174,6 +176,13 @@ const PatientDashboard = () => {
       variant: "secondary" as const
     },
     {
+      icon: Calendar,
+      title: "Book Appointment",
+      description: "Schedule appointments with doctors",
+      action: () => setShowBookingView(true),
+      variant: "outline" as const
+    },
+    {
       icon: BookOpen,
       title: "Health Tips",
       description: "Read personalized health advice",
@@ -212,6 +221,16 @@ const PatientDashboard = () => {
             </Button>
           </div>
           <PrescriptionList />
+        </div>
+      </div>
+    );
+  }
+
+  if (showBookingView) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <PatientBookingView onClose={() => setShowBookingView(false)} />
         </div>
       </div>
     );

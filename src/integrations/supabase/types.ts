@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_type: string
+          consultation_request_id: string
+          created_at: string
+          doctor_id: string
+          id: string
+          notes: string | null
+          patient_id: string
+          prescription_id: string | null
+          scheduled_date: string
+          scheduled_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_type?: string
+          consultation_request_id: string
+          created_at?: string
+          doctor_id: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          prescription_id?: string | null
+          scheduled_date: string
+          scheduled_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_type?: string
+          consultation_request_id?: string
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          prescription_id?: string | null
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       consultation_requests: {
         Row: {
           consultation_type: string
@@ -70,6 +115,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      doctor_schedule: {
+        Row: {
+          consultation_request_id: string | null
+          created_at: string
+          date: string
+          doctor_id: string
+          end_time: string
+          id: string
+          notes: string | null
+          patient_id: string | null
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          consultation_request_id?: string | null
+          created_at?: string
+          date: string
+          doctor_id: string
+          end_time: string
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          start_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          consultation_request_id?: string | null
+          created_at?: string
+          date?: string
+          doctor_id?: string
+          end_time?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       doctors: {
         Row: {

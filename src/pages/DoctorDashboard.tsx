@@ -25,6 +25,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import PendingRequestsView from "@/components/PendingRequestsView";
+import DoctorScheduleManager from "@/components/DoctorScheduleManager";
 
 interface DoctorProfile {
   id: string;
@@ -54,6 +55,7 @@ const DoctorDashboard = () => {
   const [showPrescriptionDialog, setShowPrescriptionDialog] = useState(false);
   const [showResponseDialog, setShowResponseDialog] = useState(false);
   const [showPendingRequests, setShowPendingRequests] = useState(false);
+  const [showScheduleManager, setShowScheduleManager] = useState(false);
   const [prescriptionData, setPrescriptionData] = useState({
     medications: '',
     dosageInstructions: '',
@@ -271,7 +273,7 @@ const DoctorDashboard = () => {
       title: "Manage Schedule",
       description: "Set availability and time slots",
       variant: "secondary" as const,
-      action: () => {}
+      action: () => setShowScheduleManager(true)
     },
     {
       icon: Video,
@@ -603,6 +605,11 @@ const DoctorDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Conditional rendering of DoctorScheduleManager */}
+      {showScheduleManager && (
+        <DoctorScheduleManager onClose={() => setShowScheduleManager(false)} />
+      )}
     </div>
   );
 };
