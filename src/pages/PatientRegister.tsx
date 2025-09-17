@@ -49,7 +49,7 @@ const PatientRegister = () => {
     try {
       const redirectUrl = `${window.location.origin}/login/patient`;
       
-      const { error } = await signUp(formData.email, formData.password, {
+      const { data, error } = await signUp(formData.email, formData.password, {
         full_name: `${formData.firstName} ${formData.lastName}`,
         user_type: 'patient'
       }, redirectUrl);
@@ -63,13 +63,12 @@ const PatientRegister = () => {
         return;
       }
 
-      // Create patient profile
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      // Create patient profile using the user from signUp response
+      if (data.user) {
         const { error: profileError } = await supabase
           .from('patients')
           .insert({
-            user_id: user.id,
+            user_id: data.user.id,
             full_name: `${formData.firstName} ${formData.lastName}`,
             email: formData.email,
             phone: formData.phone,
@@ -81,6 +80,12 @@ const PatientRegister = () => {
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
+          toast({
+            title: "Profile Creation Failed",
+            description: profileError.message,
+            variant: "destructive",
+          });
+          return;
         }
       }
 
