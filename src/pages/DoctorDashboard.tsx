@@ -118,7 +118,8 @@ const DoctorDashboard = () => {
 
   const handleAcceptRequest = async (request: ConsultationRequest) => {
     setSelectedRequest(request);
-    setResponseMessage(`Your consultation request has been accepted. I'll be ready for a ${request.consultation_type} consultation. Please be available at your preferred time.`);
+    const consultationType = request.consultation_type === 'video' ? 'video call' : 'chat';
+    setResponseMessage(`Your consultation request has been accepted! I'm ready to provide a ${consultationType} consultation. Please be available at your preferred time. For video calls, ensure you have a stable internet connection and a working camera/microphone.`);
     setShowResponseDialog(true);
   };
 

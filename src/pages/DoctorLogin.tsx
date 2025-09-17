@@ -30,8 +30,8 @@ const DoctorLogin = () => {
       if (error) {
         if (error.message === "Email not confirmed") {
           toast({
-            title: "Email Not Confirmed",
-            description: "Please check your email and click the confirmation link before logging in.",
+            title: "Please Confirm Your Email",
+            description: "We've sent a confirmation link to your email. Please click it to activate your account, then try logging in again.",
             variant: "destructive",
           });
         } else if (error.message === "Invalid login credentials") {

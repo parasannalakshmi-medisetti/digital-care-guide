@@ -61,11 +61,16 @@ const PatientDashboard = () => {
         .from('patients')
         .select('full_name, emergency_contact')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching patient profile:', error);
-      } else {
+        toast({
+          title: "Profile Error",
+          description: "Unable to load your profile information. Please try refreshing the page.",
+          variant: "destructive",
+        });
+      } else if (data) {
         setPatientProfile(data);
       }
     } catch (error) {
