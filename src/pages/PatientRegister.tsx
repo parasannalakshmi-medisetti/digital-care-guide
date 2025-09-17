@@ -63,18 +63,19 @@ const PatientRegister = () => {
         return;
       }
 
-      // Create patient profile using the user from signUp response
+      // Create user profile using the user from signUp response
       if (data.user) {
         const { error: profileError } = await supabase
-          .from('patients')
+          .from('users')
           .insert({
-            user_id: data.user.id,
-            full_name: `${formData.firstName} ${formData.lastName}`,
+            auth_user_id: data.user.id,
             email: formData.email,
+            full_name: `${formData.firstName} ${formData.lastName}`,
             phone: formData.phone,
+            user_type: 'patient',
             date_of_birth: formData.dateOfBirth,
             gender: formData.gender,
-            emergency_contact: formData.emergencyPhone,
+            emergency_contact: `${formData.emergencyContact} - ${formData.emergencyPhone}`,
             medical_history: formData.medicalHistory
           });
 

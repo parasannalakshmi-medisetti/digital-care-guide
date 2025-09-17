@@ -65,17 +65,18 @@ const DoctorRegister = () => {
         return;
       }
 
-      // Create doctor profile using the user from signUp response
+      // Create user profile using the user from signUp response
       if (data.user) {
         const { error: profileError } = await supabase
-          .from('doctors')
+          .from('users')
           .insert({
-            user_id: data.user.id,
-            full_name: `${formData.firstName} ${formData.lastName}`,
+            auth_user_id: data.user.id,
             email: formData.email,
+            full_name: `${formData.firstName} ${formData.lastName}`,
             phone: formData.phone,
-            license_number: formData.licenseNumber,
+            user_type: 'doctor',
             specialization: formData.specialty,
+            license_number: formData.licenseNumber,
             experience_years: parseInt(formData.experience.split('-')[0]) || 0,
             bio: formData.bio
           });
