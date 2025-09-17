@@ -20,11 +20,9 @@ const PatientRegister = () => {
     phone: "",
     password: "",
     confirmPassword: "",
-    dateOfBirth: "",
+    age: "",
     gender: "",
-    emergencyContact: "",
-    emergencyPhone: "",
-    medicalHistory: "",
+    address: "",
     acceptTerms: false,
     acceptPrivacy: false
   });
@@ -47,11 +45,32 @@ const PatientRegister = () => {
     setLoading(true);
 
     try {
+      // Check for duplicate email or phone
+      const { data: existingPatient } = await supabase
+        .from('patients')
+        .select('email, phone')
+        .or(`email.eq.${formData.email},phone.eq.${formData.phone}`)
+        .single();
+
+      if (existingPatient) {
+        const isDuplicateEmail = existingPatient.email === formData.email;
+        const isDuplicatePhone = existingPatient.phone === formData.phone;
+        
+        toast({
+          title: "Registration Failed",
+          description: isDuplicateEmail 
+            ? "An account with this email already exists" 
+            : "An account with this phone number already exists",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Create auth user
       const redirectUrl = `${window.location.origin}/login/patient`;
-      
       const { data, error } = await signUp(formData.email, formData.password, {
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        user_type: 'patient'
+        full_name: `${formData.firstName} ${formData.lastName}`
       }, redirectUrl);
 
       if (error) {
@@ -60,42 +79,42 @@ const PatientRegister = () => {
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
-      // Create user profile using the user from signUp response
+      // Insert into patients table (Supabase handles password hashing)
       if (data.user) {
-        const { error: profileError } = await supabase
-          .from('users')
+        const { error: insertError } = await supabase
+          .from('patients')
           .insert({
-            auth_user_id: data.user.id,
-            email: formData.email,
+            user_id: data.user.id,
             full_name: `${formData.firstName} ${formData.lastName}`,
             phone: formData.phone,
-            user_type: 'patient',
-            date_of_birth: formData.dateOfBirth,
-            gender: formData.gender,
-            emergency_contact: `${formData.emergencyContact} - ${formData.emergencyPhone}`,
-            medical_history: formData.medicalHistory
+            email: formData.email,
+            date_of_birth: formData.age ? new Date(new Date().getFullYear() - parseInt(formData.age), 0, 1).toISOString().split('T')[0] : null,
+            gender: formData.gender || null
           });
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
+        if (insertError) {
+          console.error('Patient insertion error:', insertError);
           toast({
-            title: "Profile Creation Failed",
-            description: profileError.message,
+            title: "Registration Failed",
+            description: insertError.message,
             variant: "destructive",
           });
+          setLoading(false);
           return;
         }
       }
 
       toast({
         title: "Registration Successful",
-        description: "Your account has been created. Please check your email to verify your account.",
+        description: "Your account has been created successfully. Please check your email to verify your account.",
       });
       navigate('/login/patient');
     } catch (error: any) {
+      console.error('Registration error:', error);
       toast({
         title: "Registration Failed",
         description: "An unexpected error occurred",
@@ -158,12 +177,15 @@ const PatientRegister = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                    <Label htmlFor="age">Age *</Label>
                     <Input
-                      id="dateOfBirth"
-                      type="date"
-                      value={formData.dateOfBirth}
-                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      id="age"
+                      type="number"
+                      min="1"
+                      max="120"
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      placeholder="25"
                       required
                     />
                   </div>
@@ -181,6 +203,16 @@ const PatientRegister = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="123 Main St, City, State, ZIP"
+                  />
                 </div>
               </div>
 
@@ -212,48 +244,6 @@ const PatientRegister = () => {
                 </div>
               </div>
 
-              {/* Emergency Contact */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">Emergency Contact</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="emergencyContact">Emergency Contact Name *</Label>
-                    <Input
-                      id="emergencyContact"
-                      value={formData.emergencyContact}
-                      onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
-                      placeholder="Jane Doe"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emergencyPhone">Emergency Contact Phone *</Label>
-                    <Input
-                      id="emergencyPhone"
-                      type="tel"
-                      value={formData.emergencyPhone}
-                      onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
-                      placeholder="+1 (555) 987-6543"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Medical Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">Medical Information</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="medicalHistory">Medical History</Label>
-                  <Textarea
-                    id="medicalHistory"
-                    value={formData.medicalHistory}
-                    onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
-                    placeholder="Any existing medical conditions, allergies, or ongoing treatments..."
-                    rows={3}
-                  />
-                </div>
-              </div>
 
               {/* Security */}
               <div className="space-y-4">

@@ -49,11 +49,32 @@ const DoctorRegister = () => {
     setLoading(true);
 
     try {
+      // Check for duplicate email, phone, or license number
+      const { data: existingDoctor } = await supabase
+        .from('doctors')
+        .select('email, phone, license_number')
+        .or(`email.eq.${formData.email},phone.eq.${formData.phone},license_number.eq.${formData.licenseNumber}`)
+        .single();
+
+      if (existingDoctor) {
+        let errorMessage = "An account already exists with this ";
+        if (existingDoctor.email === formData.email) errorMessage += "email";
+        else if (existingDoctor.phone === formData.phone) errorMessage += "phone number";
+        else if (existingDoctor.license_number === formData.licenseNumber) errorMessage += "license number";
+        
+        toast({
+          title: "Registration Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Create auth user
       const redirectUrl = `${window.location.origin}/login/doctor`;
-      
       const { data, error } = await signUp(formData.email, formData.password, {
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        user_type: 'doctor'
+        full_name: `${formData.firstName} ${formData.lastName}`
       }, redirectUrl);
 
       if (error) {
@@ -62,32 +83,33 @@ const DoctorRegister = () => {
           description: error.message,
           variant: "destructive",
         });
+        setLoading(false);
         return;
       }
 
-      // Create user profile using the user from signUp response
+      // Insert into doctors table
       if (data.user) {
-        const { error: profileError } = await supabase
-          .from('users')
+        const { error: insertError } = await supabase
+          .from('doctors')
           .insert({
-            auth_user_id: data.user.id,
-            email: formData.email,
+            user_id: data.user.id,
             full_name: `${formData.firstName} ${formData.lastName}`,
             phone: formData.phone,
-            user_type: 'doctor',
+            email: formData.email,
             specialization: formData.specialty,
             license_number: formData.licenseNumber,
             experience_years: parseInt(formData.experience.split('-')[0]) || 0,
             bio: formData.bio
           });
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
+        if (insertError) {
+          console.error('Doctor insertion error:', insertError);
           toast({
-            title: "Profile Creation Failed",
-            description: profileError.message,
+            title: "Registration Failed",
+            description: insertError.message,
             variant: "destructive",
           });
+          setLoading(false);
           return;
         }
       }
@@ -98,6 +120,7 @@ const DoctorRegister = () => {
       });
       navigate('/login/doctor');
     } catch (error: any) {
+      console.error('Registration error:', error);
       toast({
         title: "Registration Failed",
         description: "An unexpected error occurred",
