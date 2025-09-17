@@ -3,9 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Heart, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const PatientRegister = () => {
   const [formData, setFormData] = useState({
@@ -16,16 +21,83 @@ const PatientRegister = () => {
     password: "",
     confirmPassword: "",
     dateOfBirth: "",
+    gender: "",
     emergencyContact: "",
     emergencyPhone: "",
+    medicalHistory: "",
+    currentSymptoms: "",
     acceptTerms: false,
     acceptPrivacy: false
   });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { signUp } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This will be connected to Supabase authentication later
-    console.log("Patient registration:", formData);
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await signUp(formData.email, formData.password, {
+        full_name: `${formData.firstName} ${formData.lastName}`,
+        user_type: 'patient'
+      });
+
+      if (error) {
+        toast({
+          title: "Registration Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create patient profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('patients')
+          .insert({
+            user_id: user.id,
+            full_name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            phone: formData.phone,
+            date_of_birth: formData.dateOfBirth,
+            gender: formData.gender,
+            emergency_contact: formData.emergencyPhone,
+            medical_history: formData.medicalHistory,
+            current_symptoms: formData.currentSymptoms
+          });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
+      }
+
+      toast({
+        title: "Registration Successful",
+        description: "Your account has been created. Please check your email to verify your account.",
+      });
+      navigate('/login/patient');
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,15 +150,31 @@ const PatientRegister = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                    <Input
+                      id="dateOfBirth"
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -143,6 +231,32 @@ const PatientRegister = () => {
                       required
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Medical Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground">Medical Information</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="medicalHistory">Medical History</Label>
+                  <Textarea
+                    id="medicalHistory"
+                    value={formData.medicalHistory}
+                    onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
+                    placeholder="Any existing medical conditions, allergies, or ongoing treatments..."
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="currentSymptoms">Current Symptoms/Concerns</Label>
+                  <Textarea
+                    id="currentSymptoms"
+                    value={formData.currentSymptoms}
+                    onChange={(e) => setFormData({ ...formData, currentSymptoms: e.target.value })}
+                    placeholder="Any current health concerns or symptoms..."
+                    rows={2}
+                  />
                 </div>
               </div>
 
@@ -216,10 +330,9 @@ const PatientRegister = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                variant="patient"
-                disabled={!formData.acceptTerms || !formData.acceptPrivacy}
+                disabled={!formData.acceptTerms || !formData.acceptPrivacy || loading}
               >
-                Create Patient Account
+                {loading ? 'Creating Account...' : 'Create Patient Account'}
               </Button>
             </form>
 

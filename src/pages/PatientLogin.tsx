@@ -6,22 +6,49 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Heart, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 const PatientLogin = () => {
   const [formData, setFormData] = useState({
-    phone: "",
+    email: "",
     password: "",
     rememberMe: false
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This will be connected to Supabase authentication later
-    console.log("Patient login:", formData);
-    // Navigate to patient dashboard after successful login
-    navigate("/dashboard/patient");
+    setLoading(true);
+
+    try {
+      const { error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error.message || "Invalid email or password",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login Successful",
+          description: "Welcome back! Redirecting to your dashboard...",
+        });
+        navigate('/dashboard/patient');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,13 +76,13 @@ const PatientLogin = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="email">Email Address</Label>
                 <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+1 (555) 123-4567"
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="Enter your email"
                   required
                 />
               </div>
@@ -103,8 +130,8 @@ const PatientLogin = () => {
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full" variant="patient">
-                Sign In to Patient Portal
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Signing In...' : 'Sign In to Patient Portal'}
               </Button>
             </form>
 
@@ -115,18 +142,6 @@ const PatientLogin = () => {
                   Register here
                 </Link>
               </p>
-            </div>
-
-            {/* Quick Access Info */}
-            <div className="mt-8 p-4 bg-muted/50 rounded-lg">
-              <h4 className="text-sm font-medium text-foreground mb-2">After logging in, you can:</h4>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Send consultation requests to doctors</li>
-                <li>• View and manage your prescriptions</li>
-                <li>• Access health tips and resources</li>
-                <li>• Use SOS emergency services</li>
-                <li>• Schedule video consultations</li>
-              </ul>
             </div>
           </CardContent>
         </Card>
