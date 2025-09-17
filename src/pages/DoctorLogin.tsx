@@ -158,18 +158,6 @@ const DoctorLogin = () => {
               </p>
             </div>
 
-            {/* Quick Access Info */}
-            <div className="mt-8 p-4 bg-muted/50 rounded-lg">
-              <h4 className="text-sm font-medium text-foreground mb-2">Doctor Portal Features:</h4>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• View and manage patient requests</li>
-                <li>• Set appointment schedules and availability</li>
-                <li>• Conduct secure video consultations</li>
-                <li>• Accept or decline consultation requests</li>
-                <li>• Access patient medical histories</li>
-                <li>• Issue digital prescriptions</li>
-              </ul>
-            </div>
           </CardContent>
         </Card>
       </div>
