@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import DoctorList from "@/components/DoctorList";
 import PrescriptionList from "@/components/PrescriptionList";
+import SymptomsForm from "@/components/SymptomsForm";
 
 interface PatientProfile {
   full_name: string;
@@ -46,6 +47,9 @@ const PatientDashboard = () => {
   const [consultationRequests, setConsultationRequests] = useState<ConsultationRequest[]>([]);
   const [showDoctorList, setShowDoctorList] = useState(false);
   const [showPrescriptions, setShowPrescriptions] = useState(false);
+  const [showSymptomsForm, setShowSymptomsForm] = useState(false);
+  const [userSymptoms, setUserSymptoms] = useState("");
+  const [symptomCategory, setSymptomCategory] = useState("");
   const [activeView, setActiveView] = useState('dashboard');
 
   useEffect(() => {
@@ -128,12 +132,31 @@ const PatientDashboard = () => {
     });
   };
 
+  const handleSymptomsSubmit = (symptoms: string, category: string) => {
+    setUserSymptoms(symptoms);
+    setSymptomCategory(category);
+    setShowSymptomsForm(false);
+    setShowDoctorList(true);
+  };
+
+  const handleBackToSymptoms = () => {
+    setShowDoctorList(false);
+    setShowSymptomsForm(true);
+  };
+
+  const handleCloseDoctorList = () => {
+    setShowDoctorList(false);
+    setShowSymptomsForm(false);
+    setUserSymptoms("");
+    setSymptomCategory("");
+  };
+
   const quickActions = [
     {
       icon: Video,
       title: "Consult Doctor",
       description: "Browse available doctors and send consultation requests",
-      action: () => setShowDoctorList(true),
+      action: () => setShowSymptomsForm(true),
       variant: "default" as const
     },
     {
@@ -332,13 +355,38 @@ const PatientDashboard = () => {
         </Card>
       </div>
 
+      {/* Symptoms Form Modal */}
+      <Dialog open={showSymptomsForm} onOpenChange={setShowSymptomsForm}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Consult a Doctor</DialogTitle>
+          </DialogHeader>
+          <SymptomsForm 
+            onSymptomsSubmit={handleSymptomsSubmit}
+            onBack={() => setShowSymptomsForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Doctor List Modal */}
       <Dialog open={showDoctorList} onOpenChange={setShowDoctorList}>
         <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Available Doctors</DialogTitle>
+            <DialogTitle>
+              Doctors for {symptomCategory}
+              {userSymptoms && (
+                <p className="text-sm text-muted-foreground font-normal mt-1">
+                  Based on your symptoms: "{userSymptoms.substring(0, 100)}..."
+                </p>
+              )}
+            </DialogTitle>
           </DialogHeader>
-          <DoctorList onClose={() => setShowDoctorList(false)} />
+          <DoctorList 
+            onClose={handleCloseDoctorList}
+            symptoms={userSymptoms}
+            category={symptomCategory}
+            onBack={handleBackToSymptoms}
+          />
         </DialogContent>
       </Dialog>
     </div>

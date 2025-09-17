@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { User, Clock, Star, Send, Video, MessageCircle } from "lucide-react";
+import { User, Clock, Star, Send, Video, MessageCircle, ArrowLeft, Filter } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -22,13 +22,17 @@ interface Doctor {
 
 interface DoctorListProps {
   onClose: () => void;
+  symptoms?: string;
+  category?: string;
+  onBack?: () => void;
 }
 
-const DoctorList = ({ onClose }: DoctorListProps) => {
+const DoctorList = ({ onClose, symptoms: userSymptoms = "", category = "", onBack }: DoctorListProps) => {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
-  const [symptoms, setSymptoms] = useState('');
+  const [symptoms, setSymptoms] = useState(userSymptoms);
   const [consultationType, setConsultationType] = useState('video');
   const [requestMessage, setRequestMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,6 +41,51 @@ const DoctorList = ({ onClose }: DoctorListProps) => {
   useEffect(() => {
     fetchDoctors();
   }, []);
+
+  useEffect(() => {
+    if (userSymptoms) {
+      setSymptoms(userSymptoms);
+    }
+  }, [userSymptoms]);
+
+  useEffect(() => {
+    filterDoctorsByCategory();
+  }, [doctors, category]);
+
+  const filterDoctorsByCategory = () => {
+    if (!category || category === "General Medicine") {
+      setFilteredDoctors(doctors);
+      return;
+    }
+
+    const categorySpecializations: { [key: string]: string[] } = {
+      "Cardiology": ["Cardiology", "Cardiovascular Surgery", "Heart"],
+      "Orthopedics": ["Orthopedics", "Sports Medicine", "Bone", "Joint"],
+      "Dermatology": ["Dermatology", "Skin"],
+      "Neurology": ["Neurology", "Neurosurgery", "Brain", "Nerve"],
+      "Gastroenterology": ["Gastroenterology", "Digestive", "Stomach"],
+      "Pediatrics": ["Pediatrics", "Child", "Children"],
+      "Psychiatry": ["Psychiatry", "Mental Health", "Psychology"],
+      "ENT": ["ENT", "Ear", "Nose", "Throat"],
+      "Ophthalmology": ["Ophthalmology", "Eye", "Vision"],
+      "Urology": ["Urology", "Kidney", "Bladder"]
+    };
+
+    const targetSpecs = categorySpecializations[category] || [category];
+    
+    const filtered = doctors.filter(doctor => 
+      targetSpecs.some(spec => 
+        doctor.specialization.toLowerCase().includes(spec.toLowerCase())
+      )
+    );
+
+    // If no doctors found for specific category, show all doctors but prioritize relevant ones
+    if (filtered.length === 0) {
+      setFilteredDoctors(doctors);
+    } else {
+      setFilteredDoctors(filtered);
+    }
+  };
 
   const fetchDoctors = async () => {
     // Only select essential columns, excluding sensitive data like email, phone, license_number
@@ -120,39 +169,78 @@ const DoctorList = ({ onClose }: DoctorListProps) => {
 
   return (
     <>
-      <div className="max-h-[80vh] overflow-y-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {doctors.map((doctor) => (
-            <Card key={doctor.id} className="shadow-medium hover:shadow-strong transition-all duration-300">
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto bg-gradient-primary p-3 rounded-full w-fit mb-3">
-                  <User className="h-6 w-6 text-white" />
-                </div>
-                <CardTitle className="text-lg">{doctor.full_name}</CardTitle>
-                <CardDescription className="flex items-center justify-center gap-2">
-                  <Badge variant="secondary">{doctor.specialization}</Badge>
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>{doctor.experience_years} years experience</span>
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-2">{doctor.bio}</p>
-                <Button 
-                  onClick={() => {
-                    setSelectedDoctor(doctor);
-                    setShowRequestDialog(true);
-                  }}
-                  className="w-full"
-                  variant="default"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Request
+      <div className="space-y-4">
+        {/* Header with back button and filtering info */}
+        <div className="flex items-center justify-between">
+          {onBack && (
+            <Button variant="outline" size="sm" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Change Symptoms
+            </Button>
+          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Filter className="h-4 w-4" />
+            <span>
+              {filteredDoctors.length} doctor{filteredDoctors.length !== 1 ? 's' : ''} found
+              {category && ` for ${category}`}
+            </span>
+          </div>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto">
+          {filteredDoctors.length === 0 ? (
+            <div className="text-center py-12">
+              <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-medium mb-2">No doctors found</h3>
+              <p className="text-muted-foreground mb-4">
+                {category ? (
+                  <>No doctors available for {category} at the moment.</>
+                ) : (
+                  <>No doctors are currently available.</>
+                )}
+              </p>
+              {onBack && (
+                <Button variant="outline" onClick={onBack}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Try Different Symptoms
                 </Button>
-              </CardContent>
-            </Card>
-          ))}
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredDoctors.map((doctor) => (
+                <Card key={doctor.id} className="shadow-medium hover:shadow-strong transition-all duration-300">
+                  <CardHeader className="text-center pb-4">
+                    <div className="mx-auto bg-gradient-primary p-3 rounded-full w-fit mb-3">
+                      <User className="h-6 w-6 text-white" />
+                    </div>
+                    <CardTitle className="text-lg">{doctor.full_name}</CardTitle>
+                    <CardDescription className="flex items-center justify-center gap-2">
+                      <Badge variant="secondary">{doctor.specialization}</Badge>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>{doctor.experience_years} years experience</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{doctor.bio}</p>
+                    <Button 
+                      onClick={() => {
+                        setSelectedDoctor(doctor);
+                        setShowRequestDialog(true);
+                      }}
+                      className="w-full"
+                      variant="default"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Request
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
