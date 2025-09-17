@@ -59,32 +59,36 @@ const DoctorList = ({ onClose, symptoms: userSymptoms = "", category = "", onBac
 
   const filterDoctorsByCategory = () => {
     const categorySpecializations: { [key: string]: string[] } = {
-      "Cardiology": ["Cardiology", "Cardiovascular Surgery", "Heart", "Cardiac"],
-      "Orthopedics": ["Orthopedics", "Sports Medicine", "Bone", "Joint", "Spine", "Musculoskeletal"],
-      "Dermatology": ["Dermatology", "Skin", "Dermatologist"],
-      "Neurology": ["Neurology", "Neurosurgery", "Brain", "Nerve", "Neurological"],
-      "Gastroenterology": ["Gastroenterology", "Digestive", "Stomach", "GI", "Gastrointestinal"],
-      "Pediatrics": ["Pediatrics", "Child", "Children", "Pediatric"],
-      "Psychiatry": ["Psychiatry", "Mental Health", "Psychology", "Psychiatric"],
-      "ENT": ["ENT", "Ear", "Nose", "Throat", "Otolaryngology"],
-      "Ophthalmology": ["Ophthalmology", "Eye", "Vision", "Optometry"],
-      "Urology": ["Urology", "Kidney", "Bladder", "Urological"],
-      "Gynecology": ["Gynecology", "Obstetrics", "Women's Health", "OB/GYN"],
-      "General Medicine": ["General Medicine", "Internal Medicine", "Family Medicine", "Primary Care"]
+      "Cardiology": ["cardiology", "cardiovascular", "heart", "cardiac"],
+      "Orthopedics": ["orthopedics", "orthopaedics", "sports medicine", "bone", "joint", "spine", "musculoskeletal"],
+      "Dermatology": ["dermatology", "skin", "dermatologist"],
+      "Neurology": ["neurology", "neurosurgery", "brain", "nerve", "neurological"],
+      "Gastroenterology": ["gastroenterology", "digestive", "stomach", "gi", "gastrointestinal"],
+      "Pediatrics": ["pediatrics", "paediatrics", "child", "children", "pediatric"],
+      "Psychiatry": ["psychiatry", "mental health", "psychology", "psychiatric"],
+      "ENT": ["ent", "ear", "nose", "throat", "otolaryngology"],
+      "Ophthalmology": ["ophthalmology", "eye", "vision", "optometry"],
+      "Urology": ["urology", "kidney", "bladder", "urological"],
+      "Gynecology": ["gynecology", "gynaecology", "obstetrics", "women's health", "ob/gyn"],
+      "Pulmonology": ["pulmonology", "lung", "respiratory", "chest", "breathing"],
+      "Radiology": ["radiology", "imaging", "scan", "x-ray", "mri", "ct"],
+      "General Medicine": ["general medicine", "internal medicine", "family medicine", "primary care"]
     };
 
     const symptomKeywords = {
-      "Cardiology": ["chest pain", "heart", "cardiac", "palpitations", "shortness of breath", "chest tightness", "irregular heartbeat", "hypertension"],
-      "Orthopedics": ["bone", "joint", "muscle", "back pain", "knee pain", "fracture", "sprain", "arthritis", "shoulder pain", "hip pain"],
-      "Dermatology": ["skin", "rash", "acne", "eczema", "psoriasis", "mole", "dermatitis", "itching", "dry skin"],
-      "Neurology": ["migraine", "seizure", "neurological", "nerve", "brain", "memory", "coordination", "headache", "dizziness"],
-      "Gastroenterology": ["stomach", "digestive", "abdominal", "diarrhea", "constipation", "acid reflux", "heartburn", "bloating"],
-      "Pediatrics": ["child", "children", "baby", "infant", "toddler", "pediatric"],
-      "Psychiatry": ["anxiety", "depression", "stress", "mental health", "mood", "panic", "psychological"],
-      "ENT": ["ear", "nose", "throat", "hearing", "sinus", "tonsils", "voice", "swallowing"],
-      "Ophthalmology": ["eye", "vision", "sight", "glasses", "blurred vision", "eye pain"],
-      "Urology": ["kidney", "bladder", "urinary", "urine", "prostate", "urination"],
-      "Gynecology": ["women", "female", "period", "menstrual", "pregnancy", "gynecological"]
+      "Cardiology": ["chest pain", "heart", "cardiac", "palpitations", "shortness of breath", "chest tightness", "irregular heartbeat", "hypertension", "blood pressure", "angina", "heart attack", "arrhythmia"],
+      "Orthopedics": ["bone", "joint", "muscle", "back pain", "knee pain", "fracture", "sprain", "arthritis", "shoulder pain", "hip pain", "neck pain", "ankle pain", "sports injury", "ligament"],
+      "Dermatology": ["skin", "rash", "acne", "eczema", "psoriasis", "mole", "dermatitis", "itching", "dry skin", "allergic reaction", "hives", "sunburn", "wart"],
+      "Neurology": ["migraine", "seizure", "neurological", "nerve", "brain", "memory", "coordination", "headache", "dizziness", "stroke", "epilepsy", "parkinson"],
+      "Gastroenterology": ["stomach", "digestive", "abdominal", "diarrhea", "constipation", "acid reflux", "heartburn", "bloating", "nausea", "vomiting", "ulcer", "ibs"],
+      "Pediatrics": ["child", "children", "baby", "infant", "toddler", "pediatric", "fever in child", "child development", "vaccination"],
+      "Psychiatry": ["anxiety", "depression", "stress", "mental health", "mood", "panic", "psychological", "bipolar", "ptsd", "insomnia", "adhd"],
+      "ENT": ["ear", "nose", "throat", "hearing", "sinus", "tonsils", "voice", "swallowing", "runny nose", "sore throat", "ear infection", "hearing loss"],
+      "Ophthalmology": ["eye", "vision", "sight", "glasses", "blurred vision", "eye pain", "dry eyes", "red eyes", "cataracts", "glaucoma"],
+      "Urology": ["kidney", "bladder", "urinary", "urine", "prostate", "urination", "kidney stone", "uti", "incontinence"],
+      "Gynecology": ["women", "female", "period", "menstrual", "pregnancy", "gynecological", "pelvic pain", "reproductive health"],
+      "Pulmonology": ["lung", "breathing", "cough", "asthma", "copd", "pneumonia", "bronchitis", "chest congestion", "wheezing"],
+      "Radiology": ["imaging", "scan", "x-ray", "mri", "ct scan", "ultrasound", "diagnosis"]
     };
 
     const lowerSymptoms = userSymptoms.toLowerCase();
@@ -92,40 +96,78 @@ const DoctorList = ({ onClose, symptoms: userSymptoms = "", category = "", onBac
     const doctorsWithMatch: DoctorWithMatch[] = doctors.map(doctor => {
       let matchScore = 0;
       const matchReasons: string[] = [];
+      const doctorSpecialization = doctor.specialization.toLowerCase();
       
-      // Score based on specialization matching category
+      // Primary matching: Direct specialization match with category
       const targetSpecs = categorySpecializations[category] || [category];
-      const specializationMatch = targetSpecs.some(spec => 
-        doctor.specialization.toLowerCase().includes(spec.toLowerCase())
+      const exactSpecializationMatch = targetSpecs.some(spec => 
+        doctorSpecialization.includes(spec.toLowerCase())
       );
       
-      if (specializationMatch) {
-        matchScore += 10;
-        matchReasons.push(`Specializes in ${doctor.specialization}`);
+      if (exactSpecializationMatch) {
+        matchScore += 15;
+        matchReasons.push(`${doctor.specialization} specialist`);
       }
       
-      // Score based on symptom keywords in bio or specialization
-      const relevantKeywords = symptomKeywords[category] || [];
-      relevantKeywords.forEach(keyword => {
-        if (lowerSymptoms.includes(keyword)) {
-          if (doctor.bio?.toLowerCase().includes(keyword) || 
-              doctor.specialization.toLowerCase().includes(keyword)) {
-            matchScore += 5;
-            matchReasons.push(`Expertise in ${keyword} related conditions`);
+      // Secondary matching: Cross-category symptom matching
+      let bestSymptomMatch = 0;
+      let bestMatchCategory = "";
+      
+      Object.entries(symptomKeywords).forEach(([symptomCategory, keywords]) => {
+        let categoryMatchCount = 0;
+        
+        keywords.forEach(keyword => {
+          if (lowerSymptoms.includes(keyword)) {
+            // Check if doctor's specialization relates to this symptom category
+            const categorySpecs = categorySpecializations[symptomCategory] || [];
+            const specializationMatches = categorySpecs.some(spec => 
+              doctorSpecialization.includes(spec.toLowerCase())
+            );
+            
+            if (specializationMatches) {
+              categoryMatchCount += 1;
+            }
           }
+        });
+        
+        if (categoryMatchCount > bestSymptomMatch) {
+          bestSymptomMatch = categoryMatchCount;
+          bestMatchCategory = symptomCategory;
         }
       });
       
-      // Extra score for experience
+      if (bestSymptomMatch > 0) {
+        matchScore += bestSymptomMatch * 7;
+        matchReasons.push(`Treats ${bestMatchCategory.toLowerCase()} conditions`);
+      }
+      
+      // Bio keyword matching for additional context
+      const relevantKeywords = symptomKeywords[category] || [];
+      let bioMatches = 0;
+      relevantKeywords.forEach(keyword => {
+        if (lowerSymptoms.includes(keyword) && doctor.bio?.toLowerCase().includes(keyword)) {
+          bioMatches += 1;
+        }
+      });
+      
+      if (bioMatches > 0) {
+        matchScore += bioMatches * 3;
+        matchReasons.push(`Experience with related symptoms`);
+      }
+      
+      // Experience bonus
       if (doctor.experience_years >= 10) {
-        matchScore += 2;
-        matchReasons.push(`${doctor.experience_years} years of experience`);
+        matchScore += 3;
+        matchReasons.push(`${doctor.experience_years}+ years experience`);
+      } else if (doctor.experience_years >= 5) {
+        matchScore += 1;
+        matchReasons.push(`${doctor.experience_years} years experience`);
       }
       
       return {
         ...doctor,
         matchScore,
-        matchReason: matchReasons
+        matchReason: matchReasons.slice(0, 3) // Limit to top 3 reasons
       };
     });
 
